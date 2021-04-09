@@ -1,0 +1,5 @@
+/cmd/MyCertificate.crt
+/cmd/MyKey.key
+.idea
+/build
+DS_Store

@@ -1,0 +1,21 @@
+[Server]
+  [Server.Http]
+    Port = ":12210"
+    Timeout = 5
+
+[DbMap]
+  [DbMap.Default] #rename to yours
+    Driver = "mysql"
+    DSN = "root:root@tcp(localhost)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+
+[Log]
+  Level = "info"
+  ToStd = true # 目前并不起作用
+  LogRotate = true
+  Development = false
+  Sampling = true # todo: can be config some day
+  [Log.Rotate]
+    Filename = ["log", "test"]
+    MaxSize = 100 # 单个日志最大大小
+    MaxAge = 30 # 最大存活日期
+    MaxBackups = 30 # 最大日志数量
