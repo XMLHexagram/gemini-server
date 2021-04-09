@@ -5,8 +5,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/kr/pretty"
+	"io/ioutil"
 	"net"
 	"net/url"
+	"path"
+	"path/filepath"
 	"strconv"
 )
 
@@ -25,6 +28,34 @@ func New(certFile, keyFile string) (engine *Engine, err error) {
 
 func (e *Engine) Handle(router string, f HandlerFunc) {
 	e.RouterMap[router] = f
+}
+
+func (e *Engine) HandleDir(router string, dirPath string) {
+	a := func(c *Context) {
+		lenRouter := len(router)
+		path_ := c.URL.Path[lenRouter-1:]
+		fmt.Println(path_)
+		file, err := ioutil.ReadFile(path.Join(dirPath, path_))
+		if err != nil {
+			panic(err)
+		}
+		c.Render(20, string(file))
+	}
+	e.RouterMap[router] = a
+}
+
+func (e *Engine) HandleFile(router string, filePath string) {
+	a := func(c *Context) {
+		lenRouter := len(router)
+		path_ := c.URL.Path[lenRouter-1:]
+		fmt.Println(path_)
+		file, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			panic(err)
+		}
+		c.Render(20, string(file))
+	}
+	e.RouterMap[router] = a
 }
 
 func (e *Engine) Run(addr string) (err error) {
@@ -68,8 +99,17 @@ func (e *Engine) ServeGemini(conn net.Conn) {
 }
 
 func (e *Engine) handleRequest(c *Context) {
-	f := e.RouterMap[c.URL.Path]
-	f(c)
+	for k, f := range e.RouterMap {
+		if k == c.URL.Path {
+			f(c)
+			return
+		}
+		if isMatch, _ := filepath.Match(k, c.URL.Path); isMatch {
+			f(c)
+			return
+		}
+	}
+
 }
 
 type Engine struct {
