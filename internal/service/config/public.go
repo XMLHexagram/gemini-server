@@ -4,10 +4,14 @@ func ProvideLog() Log {
 	return configService.Log
 }
 
-func ProvideDbMap() DbMap {
-	return configService.DbMap
+func ProvideGemini() Gemini {
+	return configService.Gemini
 }
 
-func ProvideHttp() Http {
-	return configService.Server.Http
+func ProvideServer(serverName string) Server {
+	return configService.ServerMap[serverName]
+}
+
+func ProvideTLS() TLS {
+	return configService.TLS
 }

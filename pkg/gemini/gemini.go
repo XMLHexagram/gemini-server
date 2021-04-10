@@ -3,18 +3,20 @@ package gemini
 import (
 	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	"github.com/kr/pretty"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 )
 
 func New(certFile, keyFile string) (engine *Engine, err error) {
-	cert, err := tls.LoadX509KeyPair("MyCertificate.crt", "MyKey.key")
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return
 	}
@@ -30,10 +32,10 @@ func (e *Engine) Handle(router string, f HandlerFunc) {
 	e.RouterMap[router] = f
 }
 
-func (e *Engine) HandleDir(router string, dirPath string) {
+func (e *Engine) HandleDir(router string, dirPath string, Index string) {
 	a := func(c *Context) {
 		lenRouter := len(router)
-		path_ := c.URL.Path[lenRouter-1:]
+		path_ := c.URL.Path[lenRouter:]
 		fmt.Println(path_)
 		file, err := ioutil.ReadFile(path.Join(dirPath, path_))
 		if err != nil {
@@ -41,7 +43,15 @@ func (e *Engine) HandleDir(router string, dirPath string) {
 		}
 		c.Render(20, string(file))
 	}
-	e.RouterMap[router] = a
+	if Index != "" {
+		_, err := os.Stat(path.Join(dirPath, Index))
+		if err != nil {
+			panic(err)
+		} else {
+			e.HandleFile(router, path.Join(dirPath, Index))
+		}
+	}
+	e.RouterMap[router+"/*"] = a
 }
 
 func (e *Engine) HandleFile(router string, filePath string) {
@@ -54,6 +64,30 @@ func (e *Engine) HandleFile(router string, filePath string) {
 			panic(err)
 		}
 		c.Render(20, string(file))
+	}
+	e.RouterMap[router] = a
+}
+
+func (e *Engine) HandleProxy(router string, url string) {
+	a := func(c *Context) {
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			panic(err)
+		}
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		bodyMap := make(map[string]interface{})
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			panic(err)
+		}
+		err = json.Unmarshal(body, &bodyMap)
+		if err != nil {
+			panic(err)
+		}
+		c.Render(20, bodyMap["body"].(string))
 	}
 	e.RouterMap[router] = a
 }
@@ -88,7 +122,7 @@ func (e *Engine) ServeGemini(conn net.Conn) {
 	if err != nil {
 		panic(err)
 	}
-	pretty.Println(u)
+	//pretty.Println(u)
 
 	c := &Context{
 		Conn: conn,
@@ -99,17 +133,20 @@ func (e *Engine) ServeGemini(conn net.Conn) {
 }
 
 func (e *Engine) handleRequest(c *Context) {
+	var F HandlerFunc
 	for k, f := range e.RouterMap {
 		if k == c.URL.Path {
-			f(c)
-			return
+			F = f
+			break
 		}
 		if isMatch, _ := filepath.Match(k, c.URL.Path); isMatch {
-			f(c)
-			return
+			F = f
 		}
 	}
-
+	if F != nil {
+		F(c)
+	}
+	return
 }
 
 type Engine struct {

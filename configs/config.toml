@@ -1,12 +1,11 @@
-[Server]
-  [Server.Http]
-    Port = ":12210"
+[ServerMap]
+  [ServerMap.Gemini]
+    Port = ":1965"
     Timeout = 5
 
-[DbMap]
-  [DbMap.Default] #rename to yours
-    Driver = "mysql"
-    DSN = "root:root@tcp(localhost)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+[TLS]
+  CertFile = "test/MyCertificate.crt"
+  KeyFile = "test/MyKey.key"
 
 [Log]
   Level = "info"
@@ -19,3 +18,21 @@
     MaxSize = 100 # 单个日志最大大小
     MaxAge = 30 # 最大存活日期
     MaxBackups = 30 # 最大日志数量
+
+[Gemini]
+  [[Gemini.File]]
+    Router = "/file"
+    Path = "test.gemini"
+
+  [[Gemini.Dir]]
+    Router = "/dir"
+    Path = "test/dir"
+    Index = "index.gmi"
+    AutoCatalogue = false
+
+  [[Gemini.Proxy]]
+    Router = "/url"
+    Method = "GET"
+    URL = "http://127.0.0.1:12222"
+    MetaField = "meta"
+    BodyField = "body"
