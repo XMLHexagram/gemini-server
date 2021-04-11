@@ -113,6 +113,7 @@ func (e *Engine) Run(addr string) (err error) {
 
 	for {
 		conn, err := listener.Accept()
+		fmt.Println(conn.RemoteAddr())
 		if err != nil {
 			return err
 		}

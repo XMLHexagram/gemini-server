@@ -8,6 +8,8 @@ Gemini-server is an easy-to-use server which implement Gemini Project protocol.D
 
 ## How to install
 
+**WARNING: not recommended using until v0.1.0 which might release before 2021-4-20**
+
 **WARNING: every version under v1.0.0 is unstable**
 
 1. Go to [releases](https://github.com/lmx-Hexagram/gemini-server/releases) find the asset fit your environment and download it.
