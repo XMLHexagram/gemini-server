@@ -9,12 +9,13 @@ var e *gemini.Engine
 
 func Init() {
 	tls := config.ProvideTLS()
-	engine, err := gemini.New(tls.CertFile, tls.KeyFile)
+	geminiConfig := config.ProvideGemini()
+	engine, err := gemini.New(tls.CertFile, tls.KeyFile, geminiConfig.DefaultLang)
 	if err != nil {
 		panic(err)
 	}
-
-	geminiConfig := config.ProvideGemini()
+	engine.AutoRedirect = geminiConfig.AutoRedirect
+	engine.AutoRedirectUrl = geminiConfig.AutoRedirectUrl
 	for _, v := range geminiConfig.Dir {
 		engine.HandleDir(v.Router, v.Path, v.Index)
 	}

@@ -20,6 +20,9 @@
     MaxBackups = 30 # 最大日志数量
 
 [Gemini]
+  DefaultLang = "zh"
+  AutoRedirect = true
+  AutoRedirectUrl = "gemini://localhost/dir"
   [[Gemini.File]]
     Router = "/file"
     Path = "test.gemini"

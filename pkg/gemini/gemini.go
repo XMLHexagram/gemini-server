@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"go-gemini-server/pkg/debug"
+	"go-gemini-server/pkg/statusCode"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -15,21 +17,23 @@ import (
 	"strconv"
 )
 
-func New(certFile, keyFile string) (engine *Engine, err error) {
+func New(certFile, keyFile, DefaultLang string) (engine *Engine, err error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return
 	}
 
 	engine = &Engine{
-		Cert:      cert,
-		RouterMap: make(map[string]HandlerFunc),
+		Cert:        cert,
+		RouterMap:   make(map[string]HandlerFunc),
+		DefaultLang: DefaultLang,
 	}
 	return
 }
 
 func (e *Engine) Handle(router string, f HandlerFunc) {
 	e.RouterMap[router] = f
+	debug.PrintRoute(router)
 }
 
 func (e *Engine) HandleDir(router string, dirPath string, Index string) {
@@ -52,6 +56,7 @@ func (e *Engine) HandleDir(router string, dirPath string, Index string) {
 		}
 	}
 	e.RouterMap[router+"/*"] = a
+	debug.PrintLoadDir(router+"/*", dirPath)
 }
 
 func (e *Engine) HandleFile(router string, filePath string) {
@@ -66,6 +71,7 @@ func (e *Engine) HandleFile(router string, filePath string) {
 		c.Render(20, string(file))
 	}
 	e.RouterMap[router] = a
+	debug.PrintLoadFile(router, filePath)
 }
 
 func (e *Engine) HandleProxy(router string, url string) {
@@ -90,6 +96,7 @@ func (e *Engine) HandleProxy(router string, url string) {
 		c.Render(20, bodyMap["body"].(string))
 	}
 	e.RouterMap[router] = a
+	debug.PrintProxy(router, url)
 }
 
 func (e *Engine) Run(addr string) (err error) {
@@ -116,11 +123,17 @@ func (e *Engine) Run(addr string) (err error) {
 }
 
 func (e *Engine) ServeGemini(conn net.Conn) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("[panic] ", r)
+			writeErrorResponseHeader(int(statusCode.PermanentFailure), "unhandled crash error", conn)
+		}
+	}()
 	s := bufio.NewScanner(conn)
 	s.Scan()
 	u, err := url.Parse(s.Text())
 	if err != nil {
-		panic(err)
+		writeErrorResponseHeader(int(statusCode.BadRequest), "invalid url", conn)
 	}
 	//pretty.Println(u)
 
@@ -128,6 +141,7 @@ func (e *Engine) ServeGemini(conn net.Conn) {
 		Conn: conn,
 		URL:  u,
 		Keys: make(map[string]interface{}),
+		Lang: e.DefaultLang,
 	}
 	e.handleRequest(c)
 }
@@ -146,12 +160,20 @@ func (e *Engine) handleRequest(c *Context) {
 	if F != nil {
 		F(c)
 	}
+	if e.AutoRedirect {
+		writeErrorResponseHeader(30, e.AutoRedirectUrl, c.Conn)
+	}
+	writeErrorResponseHeader(51, "", c.Conn)
+
 	return
 }
 
 type Engine struct {
-	Cert      tls.Certificate
-	RouterMap map[string]HandlerFunc
+	Cert            tls.Certificate
+	RouterMap       map[string]HandlerFunc
+	DefaultLang     string
+	AutoRedirect    bool
+	AutoRedirectUrl string
 }
 
 type HandlerFunc func(*Context)
@@ -160,16 +182,22 @@ type Context struct {
 	Conn net.Conn
 	URL  *url.URL
 	Keys map[string]interface{}
+	Lang string
+}
+
+func writeErrorResponseHeader(code int, meta string, conn net.Conn) {
+	conn.Write([]byte(strconv.Itoa(code) + " " + meta + "\r\n"))
+	conn.Close()
 }
 
 func (c *Context) Render(code int, body string) {
-	writeResponseHeader(code, c.Conn)
+	defer c.Conn.Close()
+	writeResponseHeader(code, c.Lang, c.Conn)
 	c.Conn.Write([]byte(body))
-	c.Conn.Close()
 }
 
-func writeResponseHeader(code int, conn net.Conn) {
-	meta := "text/gemini; lang=en; charset=utf-8"
+func writeResponseHeader(code int, lang string, conn net.Conn) {
+	meta := "text/gemini; lang=" + lang + "; charset=utf-8"
 	_, err := conn.Write([]byte(strconv.Itoa(code) + " " + meta + "\r\n"))
 	if err != nil {
 		panic(err)

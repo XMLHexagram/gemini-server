@@ -36,7 +36,10 @@ type Rotate struct {
 }
 
 type Gemini struct {
-	File []struct {
+	DefaultLang     string
+	AutoRedirect    bool
+	AutoRedirectUrl string
+	File            []struct {
 		Router string `toml:"Router"`
 		Path   string `toml:"Path"`
 	} `toml:"File"`
