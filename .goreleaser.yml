@@ -24,6 +24,7 @@ builds:
         goarch: 386
     mod_timestamp: "{{ .CommitTimestamp }}"
   - id: win
+    main: cmd/main.go
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
