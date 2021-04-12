@@ -1,6 +1,6 @@
 package main
 
-import "go-gemini-server/internal/service"
+import "github.com/lmx-Hexagram/gemini-server/internal/service"
 
 func main() {
 	//engine, err := gemini.New("MyCertificate.crt", "MyKey.key")

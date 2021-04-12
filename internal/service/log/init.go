@@ -1,7 +1,7 @@
 package log
 
 import (
-	"go-gemini-server/internal/service/config"
+	"github.com/lmx-Hexagram/gemini-server/internal/service/config"
 	"go.uber.org/zap"
 )
 

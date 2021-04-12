@@ -1,4 +1,4 @@
-module go-gemini-server
+module github.com/lmx-Hexagram/gemini-server
 
 go 1.16
 

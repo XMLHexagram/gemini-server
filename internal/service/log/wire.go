@@ -4,7 +4,7 @@ package log
 
 import (
 	"github.com/google/wire"
-	"go-gemini-server/internal/service/config"
+	"github.com/lmx-Hexagram/gemini-server/internal/service/config"
 )
 
 func initDep() *service {

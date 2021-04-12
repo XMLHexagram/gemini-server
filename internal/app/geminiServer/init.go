@@ -1,8 +1,8 @@
 package geminiServer
 
 import (
-	"go-gemini-server/internal/service/config"
-	"go-gemini-server/pkg/gemini"
+	"github.com/lmx-Hexagram/gemini-server/internal/service/config"
+	"github.com/lmx-Hexagram/gemini-server/pkg/gemini"
 )
 
 var e *gemini.Engine

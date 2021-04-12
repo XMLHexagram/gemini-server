@@ -1,8 +1,8 @@
 package app
 
 import (
-	"go-gemini-server/internal/app/geminiServer"
-	"go-gemini-server/internal/service/log"
+	"github.com/lmx-Hexagram/gemini-server/internal/app/geminiServer"
+	"github.com/lmx-Hexagram/gemini-server/internal/service/log"
 )
 
 func Init() {
